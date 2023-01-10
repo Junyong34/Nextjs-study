@@ -1,6 +1,9 @@
 import { Box, Button } from '@chakra-ui/react';
 
-export const Google_login_button = function () {
+interface Props {
+  onClick: () => void;
+}
+export const Google_login_button = function ({ onClick }: Props) {
   return (
     <Box>
       <Button
@@ -11,6 +14,7 @@ export const Google_login_button = function () {
         bgColor={'#4285f4'}
         color={'white'}
         colorScheme={'blue'}
+        onClick={onClick}
         leftIcon={
           <img
             src={'/google.svg'}
