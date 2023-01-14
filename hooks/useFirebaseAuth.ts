@@ -7,6 +7,37 @@ export default function useFirebaseAuth() {
   const [authUser, setAuthUser] = useState<InAuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(FirebaseClient.getInstance().Auth, provider);
+      const { user } = result;
+      if (user) {
+        setAuthUser({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        });
+        const resp = await fetch('/api/members.add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+          }),
+        });
+        console.info({ status: resp.status, body: await resp.json() });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = FirebaseClient.getInstance().Auth.onAuthStateChanged((user) => {
       if (user) {
@@ -24,24 +55,6 @@ export default function useFirebaseAuth() {
 
     return () => unsubscribe();
   }, []);
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(FirebaseClient.getInstance().Auth, provider);
-      const { user } = result;
-      if (user) {
-        setAuthUser({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const signOut = async () => {
     await FirebaseClient.getInstance().Auth.signOut();
