@@ -24,8 +24,23 @@ async function add(req: NextApiRequest, res: NextApiResponse) {
   res.status(500).json(addResult);
 }
 
+async function findByScreenName(req: NextApiRequest, res: NextApiResponse) {
+  const { screenName } = req.query;
+  if (screenName === undefined || screenName === null) {
+    throw new BadReqError('screenName is required');
+  }
+  const extractScreenName = Array.isArray(screenName) ? screenName[0] : screenName;
+  const findResult = await MemberModel.findByScreenName(extractScreenName);
+  if (findResult) {
+    res.status(200).json(findResult);
+  } else {
+    res.status(404).json({ message: 'Not Found' });
+  }
+}
+
 const MemberCtrl = {
   add,
+  findByScreenName,
 };
 
 export default MemberCtrl;
