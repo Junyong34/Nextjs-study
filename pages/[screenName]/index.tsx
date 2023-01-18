@@ -1,28 +1,35 @@
-import { NextPage } from 'next';
+import { GetServerSideProps, NextPage } from 'next';
 import { ServiceLayout } from '@/components/service_layout.';
 import { Avatar, Box, Button, Flex, FormControl, FormLabel, Switch, Text, Textarea, useToast } from '@chakra-ui/react';
 import ResizeTextArea from 'react-textarea-autosize';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth_user.context';
+import { InAuthUser } from '@/models/in_auth_user';
+import axios, { AxiosResponse } from 'axios';
+interface Props {
+  userInfo: InAuthUser | null;
+}
+// const userInfo = {
+//   uid: 'test',
+//   email: 'wnsdyd21@gmail.com',
+//   displayName: '김우빈',
+//   photoURL: 'https://lh3.googleusercontent.com/a/AEdFTp6tzK8dAUX5fdMzYrLptALFc9o0q7Jl_nSdMuO-=s96-c',
+// };
 
-const userInfo = {
-  uid: 'test',
-  email: 'wnsdyd21@gmail.com',
-  displayName: '김우빈',
-  photoUrl: 'https://lh3.googleusercontent.com/a/AEdFTp6tzK8dAUX5fdMzYrLptALFc9o0q7Jl_nSdMuO-=s96-c',
-};
-
-const UserHomePage: NextPage = function () {
+const UserHomePage: NextPage<Props> = function ({ userInfo }) {
   const { authUser } = useAuth();
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const toast = useToast();
+  if (userInfo === null) {
+    return <div>유저 정보가 없습니다.</div>;
+  }
   return (
     <ServiceLayout title={'user home'} minHeight={'100vh'} backgroundColor={'grey.50'}>
       <Box maxW={'md'} mx={'auto'} pt={6}>
         <Box border={'1px'} borderRadius={'lg'} overflow={'hidden'} mb={'2'} bg={'white'}>
           <Flex p={6}>
-            <Avatar size={'lg'} src={userInfo.photoUrl} />
+            <Avatar size={'lg'} src={userInfo.photoURL ?? ''} />
             <Flex direction={'column'} justify={'center'} pl={4}>
               <Text fontSize={'md'}>{userInfo.displayName}</Text>
               <Text fontSize={'xs'}>{userInfo.email}</Text>
@@ -107,6 +114,37 @@ const UserHomePage: NextPage = function () {
       </Box>
     </ServiceLayout>
   );
+};
+
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+  const { screenName } = query;
+  if (screenName === undefined) {
+    return {
+      props: {
+        userInfo: null,
+      },
+    };
+  }
+  try {
+    const protocal = process.env.PROTOCOL || 'http';
+    const host = process.env.HOST || 'localhost';
+    const port = process.env.PROT || '3000';
+    const baseUrl = `${protocal}://${host}:${port}`;
+    const userInfoResp: AxiosResponse<InAuthUser> = await axios(`${baseUrl}/api/user.Info/${screenName}`);
+    console.info(userInfoResp.data);
+    return {
+      props: {
+        userInfo: userInfoResp.data ?? null,
+      },
+    };
+  } catch (e) {
+    // console.error(e);
+    return {
+      props: {
+        userInfo: null,
+      },
+    };
+  }
 };
 
 export default UserHomePage;
