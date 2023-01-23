@@ -9,6 +9,47 @@ import axios, { AxiosResponse } from 'axios';
 interface Props {
   userInfo: InAuthUser | null;
 }
+async function postMessage({
+  uid,
+  message,
+  author,
+}: {
+  uid: string;
+  message: string;
+  author?: {
+    displayName: string;
+    photoURL?: string;
+  };
+}) {
+  if (message.length <= 0) {
+    return {
+      result: false,
+      message: '메시지를 입력해주세요',
+    };
+  }
+  try {
+    await fetch(`/api/message.add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        uid,
+        message,
+        author,
+      }),
+    });
+    return {
+      result: true,
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      result: false,
+      message: '메시지 전송에 실패했습니다',
+    };
+  }
+}
 // const userInfo = {
 //   uid: 'test',
 //   email: 'wnsdyd21@gmail.com',
@@ -25,7 +66,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
     return <div>유저 정보가 없습니다.</div>;
   }
   return (
-    <ServiceLayout title={'user home'} minHeight={'100vh'} backgroundColor={'grey.50'}>
+    <ServiceLayout title={`${userInfo.displayName} 홈`} minHeight={'100vh'} backgroundColor={'grey.50'}>
       <Box maxW={'md'} mx={'auto'} pt={6}>
         <Box border={'1px'} borderRadius={'lg'} overflow={'hidden'} mb={'2'} bg={'white'}>
           <Flex p={6}>
@@ -80,6 +121,37 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
               colorScheme={'yellow'}
               variant={'solid'}
               size={'sm'}
+              onClick={async () => {
+                const author = isAnonymous
+                  ? undefined
+                  : {
+                      displayName: authUser?.displayName ?? '',
+                      photoURL: authUser?.photoURL ?? 'https://bit.ly/broken-link/1',
+                    };
+                const messageResp = await postMessage({
+                  uid: userInfo.uid,
+                  message,
+                  author,
+                });
+                if (messageResp.result) {
+                  toast({
+                    title: '메시지 전송 성공',
+                    position: 'top',
+                    status: 'success',
+                    duration: 2000,
+                    isClosable: false,
+                  });
+                  setMessage('');
+                } else {
+                  toast({
+                    title: messageResp.message,
+                    position: 'top',
+                    status: 'error',
+                    duration: 2000,
+                    isClosable: false,
+                  });
+                }
+              }}
             >
               등록
             </Button>

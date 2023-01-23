@@ -6,3 +6,11 @@ GET http://localhost:3000/api/hello
 Accept: application/json
 
 ###
+POST http://localhost:3000/api/message.add
+Accept: application/json
+
+{
+  "uid": "WuNFsCWb8ZgcIBmuIKsVIKbn1i72",
+  "message": "test"
+}
+
