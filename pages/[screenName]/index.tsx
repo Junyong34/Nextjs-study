@@ -76,7 +76,9 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [messageList, setMessageList] = useState<InMessage[]>([]);
+  const [messageListFetchTrigger, setMessageListFetchTrigger] = useState(false);
   const toast = useToast();
+
   async function fetchMessageList(uid: string) {
     try {
       const resp = await fetch(`/api/message.list?uid=${uid}`);
@@ -93,7 +95,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
     if (userInfo) {
       void fetchMessageList(userInfo.uid);
     }
-  }, [userInfo]);
+  }, [userInfo, messageListFetchTrigger]);
 
   if (userInfo === null) {
     return <div>유저 정보가 없습니다.</div>;
@@ -226,6 +228,9 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
                 photoURL={userInfo?.photoURL ?? 'https://bit.ly/broken-link/1'}
                 displayName={userInfo?.displayName ?? ''}
                 isOwner={authUser !== null && authUser.uid === userInfo.uid}
+                onSendMessage={() => {
+                  setMessageListFetchTrigger((prev) => !prev);
+                }}
               />
             );
           })}

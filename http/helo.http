@@ -1,3 +1,13 @@
+POST http://localhost:3000/api/message.add.reply
+Accept: application/json
+
+{
+  "uid": "WuNFsCWb8ZgcIBmuIKsVIKbn1i72",
+  "messageId": "l77gUXQYOquFel2XJBba",
+  "reply": "This is a reply"
+}
+
+###
 GET http://localhost:3000/api/message.list?uid=WuNFsCWb8ZgcIBmuIKsVIKbn1i72
 Accept: application/json
 
@@ -15,6 +25,6 @@ Accept: application/json
 
 {
   "uid": "WuNFsCWb8ZgcIBmuIKsVIKbn1i72",
-  "message": "test"
+  "message": "tesddddt"
 }
 

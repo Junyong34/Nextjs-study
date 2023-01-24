@@ -67,8 +67,35 @@ async function list({ uid }: { uid: string }) {
   });
   return listData;
 }
+
+async function postReply({ uid, messageId, reply }: { uid: string; messageId: string; reply: string }) {
+  const memberRef = Firestore.collection(MEMBER_COL).doc(uid);
+  const messageRef = memberRef.collection(MSG_COL).doc(messageId);
+  await Firestore.runTransaction(async (transaction) => {
+    const memberDoc = await transaction.get(memberRef);
+    if (!memberDoc.exists) {
+      throw new Custom_server_error({ statusCode: 400, message: 'member does not exist' });
+    }
+
+    const messageDoc = await transaction.get(messageRef);
+    if (!messageDoc.exists) {
+      throw new Custom_server_error({ statusCode: 400, message: 'message does not exist' });
+    }
+    const messageData = messageDoc.data() as InMessageServer;
+    if (messageData.reply) {
+      throw new Custom_server_error({ statusCode: 400, message: 'already replied' });
+    }
+
+    await transaction.update(messageRef, {
+      reply,
+      replyAt: firestore.FieldValue.serverTimestamp(),
+    });
+  });
+}
+
 const messageModel = {
   post,
   list,
+  postReply,
 };
 export default messageModel;
