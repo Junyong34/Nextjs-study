@@ -41,9 +41,23 @@ async function postReply(req: NextApiRequest, res: NextApiResponse) {
   return res.status(201).json({ message: 'success' });
 }
 
+async function get(req: NextApiRequest, res: NextApiResponse) {
+  const { uid, messageId } = req.query;
+  if (uid === undefined) {
+    throw new Custom_server_error({ statusCode: 400, message: 'uid is required' });
+  }
+  if (messageId === undefined) {
+    throw new Custom_server_error({ statusCode: 400, message: 'message is required' });
+  }
+
+  const data = await messageModel.get({ uid: uid.toString(), messageId: messageId.toString() });
+  return res.status(200).json(data);
+}
+
 const MessageCtrl = {
   post,
   list,
+  get,
   postReply,
 };
 

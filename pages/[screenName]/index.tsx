@@ -76,7 +76,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [messageList, setMessageList] = useState<InMessage[]>([]);
-  const [messageListFetchTrigger, setMessageListFetchTrigger] = useState(false);
+  const [MessageListFetchTrigger, setMessageListFetchTrigger] = useState(false);
   const toast = useToast();
 
   async function fetchMessageList(uid: string) {
@@ -91,11 +91,31 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
     }
   }
 
+  async function fetchMessageInfo({ uid, messageId }: { uid: string; messageId: string }) {
+    try {
+      const resp = await fetch(`/api/message.info?uid=${uid}&messageId=${messageId}`);
+      if (resp.status === 200) {
+        const data: InMessage = await resp.json();
+        setMessageList((prev) => {
+          const findIndex = prev.findIndex((item) => item.id === data.id);
+          console.log(findIndex, '######', prev, data);
+          if (findIndex >= 0) {
+            const updateArr = [...prev];
+            updateArr[findIndex] = data;
+            return updateArr;
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
   useEffect(() => {
     if (userInfo) {
       void fetchMessageList(userInfo.uid);
     }
-  }, [userInfo, messageListFetchTrigger]);
+  }, [userInfo, MessageListFetchTrigger]);
 
   if (userInfo === null) {
     return <div>유저 정보가 없습니다.</div>;
@@ -177,6 +197,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
                     isClosable: false,
                   });
                   setMessage('');
+                  setMessageListFetchTrigger((prev) => !prev);
                 } else {
                   toast({
                     title: messageResp.message,
@@ -229,7 +250,10 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
                 displayName={userInfo?.displayName ?? ''}
                 isOwner={authUser !== null && authUser.uid === userInfo.uid}
                 onSendMessage={() => {
-                  setMessageListFetchTrigger((prev) => !prev);
+                  void fetchMessageInfo({
+                    uid: userInfo.uid,
+                    messageId: messageData.id,
+                  });
                 }}
               />
             );
