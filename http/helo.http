@@ -1,3 +1,7 @@
+GET http://localhost:3000/api/message.list?uid=WuNFsCWb8ZgcIBmuIKsVIKbn1i72
+Accept: application/json
+
+###
 GET http://localhost:3000/api/user.Info/wnsdyd21
 Accept: application/json
 

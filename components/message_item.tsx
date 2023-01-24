@@ -1,10 +1,9 @@
 import { Avatar, Box, Button, Divider, Flex, Text, Textarea } from '@chakra-ui/react';
 import { InMessage } from '@/models/message/in_message';
-import elapsedTime from '@/utils/convert_date_to_string';
 import convert_date_to_string from '@/utils/convert_date_to_string';
 import ResizeTextArea from 'react-textarea-autosize';
 
-interface Porps {
+interface Props {
   uid: string;
   displayName: string;
   isOwner: boolean;
@@ -12,7 +11,7 @@ interface Porps {
   item: InMessage;
 }
 
-const MessageItem = function ({ item, photoURL, displayName, isOwner }: Porps) {
+const MessageItem = function ({ item, photoURL, displayName, isOwner }: Props) {
   const photoUrl = item.author
     ? item.author.photoURL ?? 'https://bit.ly/broken-link/1'
     : 'https://bit.ly/broken-link/1';
@@ -27,7 +26,7 @@ const MessageItem = function ({ item, photoURL, displayName, isOwner }: Porps) {
             {displayNameItem}
           </Text>
           <Text fontSize={'xx-small'} whiteSpace={'pre-line'} color={'gray.500'}>
-            {elapsedTime(item.createAt)}
+            {convert_date_to_string(item.createAt!)}
           </Text>
         </Flex>
       </Box>
