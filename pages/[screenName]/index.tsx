@@ -74,6 +74,8 @@ async function postMessage({
 const UserHomePage: NextPage<Props> = function ({ userInfo }) {
   const { authUser } = useAuth();
   const [message, setMessage] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [messageList, setMessageList] = useState<InMessage[]>([]);
   const [MessageListFetchTrigger, setMessageListFetchTrigger] = useState(false);
@@ -81,10 +83,17 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
 
   async function fetchMessageList(uid: string) {
     try {
-      const resp = await fetch(`/api/message.list?uid=${uid}`);
+      const resp = await fetch(`/api/message.list?uid=${uid}&page=${page}&size=10`);
       if (resp.status === 200) {
-        const data = await resp.json();
-        setMessageList(data);
+        const data: {
+          totalElements: number;
+          content: InMessage[];
+          totalPages: number;
+          page: number;
+          size: number;
+        } = await resp.json();
+        setTotalPage(data.totalPages);
+        setMessageList((prev) => [...prev, ...data.content]);
       }
     } catch (e) {
       console.error(e);
@@ -115,7 +124,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
     if (userInfo) {
       void fetchMessageList(userInfo.uid);
     }
-  }, [userInfo, MessageListFetchTrigger]);
+  }, [userInfo, MessageListFetchTrigger, page]);
 
   if (userInfo === null) {
     return <div>유저 정보가 없습니다.</div>;
@@ -259,6 +268,18 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
             );
           })}
         </VStack>
+        {totalPage > page && (
+          <Button
+            width={'full'}
+            mt={2}
+            fontSize={'sm'}
+            onClick={() => {
+              setPage((prev) => prev + 1);
+            }}
+          >
+            더보기
+          </Button>
+        )}
       </Box>
     </ServiceLayout>
   );

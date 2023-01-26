@@ -16,11 +16,17 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 }
 
 async function list(req: NextApiRequest, res: NextApiResponse) {
-  const { uid } = req.query;
+  const { uid, page, size } = req.query;
+  const convertPage = page ? parseInt(page.toString(), 10) : 1;
+  const convertSize = size ? parseInt(size.toString(), 10) : 10;
   if (uid === undefined) {
     throw new Custom_server_error({ statusCode: 400, message: 'uid is required' });
   }
-  const messages = await messageModel.list({ uid: uid.toString() });
+  const messages = await messageModel.listWithPage({
+    uid: uid.toString(),
+    page: convertPage,
+    size: convertSize,
+  });
   return res.status(200).json(messages);
 }
 
