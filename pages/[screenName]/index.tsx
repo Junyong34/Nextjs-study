@@ -14,15 +14,18 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import ResizeTextArea from 'react-textarea-autosize';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/auth_user.context';
 import { InAuthUser } from '@/models/in_auth_user';
 import axios, { AxiosResponse } from 'axios';
 import MessageItem from '@/components/message_item';
 import { InMessage } from '@/models/message/in_message';
+import { useQuery } from 'react-query';
+
 interface Props {
   userInfo: InAuthUser | null;
 }
+
 async function postMessage({
   uid,
   message,
@@ -64,6 +67,7 @@ async function postMessage({
     };
   }
 }
+
 // const userInfo = {
 //   uid: 'test',
 //   email: 'wnsdyd21@gmail.com',
@@ -81,24 +85,24 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
   const [MessageListFetchTrigger, setMessageListFetchTrigger] = useState(false);
   const toast = useToast();
 
-  async function fetchMessageList(uid: string) {
-    try {
-      const resp = await fetch(`/api/message.list?uid=${uid}&page=${page}&size=10`);
-      if (resp.status === 200) {
-        const data: {
-          totalElements: number;
-          content: InMessage[];
-          totalPages: number;
-          page: number;
-          size: number;
-        } = await resp.json();
-        setTotalPage(data.totalPages);
-        setMessageList((prev) => [...prev, ...data.content]);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  // async function fetchMessageList(uid: string) {
+  //   try {
+  //     const resp = await fetch(`/api/message.list?uid=${uid}&page=${page}&size=10`);
+  //     if (resp.status === 200) {
+  //       const data: {
+  //         totalElements: number;
+  //         content: InMessage[];
+  //         totalPages: number;
+  //         page: number;
+  //         size: number;
+  //       } = await resp.json();
+  //       setTotalPage(data.totalPages);
+  //       setMessageList((prev) => [...prev, ...data.content]);
+  //     }
+  //   } catch (e) {
+  //     console.error(e);
+  //   }
+  // }
 
   async function fetchMessageInfo({ uid, messageId }: { uid: string; messageId: string }) {
     try {
@@ -120,11 +124,38 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
       console.error(e);
     }
   }
-  useEffect(() => {
-    if (userInfo) {
-      void fetchMessageList(userInfo.uid);
-    }
-  }, [userInfo, MessageListFetchTrigger, page]);
+
+  const messageListQueryKey = ['messageList', userInfo?.uid, page, MessageListFetchTrigger];
+  useQuery(
+    messageListQueryKey,
+    async () =>
+      await axios.get<{
+        totalElements: number;
+        content: InMessage[];
+        totalPages: number;
+        page: number;
+        size: number;
+      }>(`/api/message.list?uid=${userInfo?.uid}&page=${page}&size=10`),
+    {
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+      onSuccess: ({ data }: any) => {
+        console.log(data.totalPages);
+        setTotalPage(data.totalPages);
+        if (page === 1) {
+          setMessageList(data.content);
+        } else {
+          setMessageList((prev) => [...prev, ...data.content]);
+        }
+      },
+    },
+  );
+
+  // useEffect(() => {
+  //   if (userInfo) {
+  //     void fetchMessageList(userInfo.uid);
+  //   }
+  // }, [userInfo, MessageListFetchTrigger, page]);
 
   if (userInfo === null) {
     return <div>유저 정보가 없습니다.</div>;
@@ -206,7 +237,10 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
                     isClosable: false,
                   });
                   setMessage('');
-                  setMessageListFetchTrigger((prev) => !prev);
+                  setPage(1);
+                  setTimeout(() => {
+                    setMessageListFetchTrigger((prev) => !prev);
+                  }, 50);
                 } else {
                   toast({
                     title: messageResp.message,
@@ -252,7 +286,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
           {messageList.map((messageData) => {
             return (
               <MessageItem
-                key={`message-${userInfo?.uid}-${messageData.id}`}
+                key={`message-${userInfo.uid}-${messageData.id}`}
                 uid={userInfo.uid}
                 item={messageData}
                 photoURL={userInfo?.photoURL ?? 'https://bit.ly/broken-link/1'}

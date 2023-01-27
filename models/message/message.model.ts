@@ -30,7 +30,7 @@ async function post({
     }
     const memberInfo = memberDoc.data() as InAuthUser & { messageCount: number };
     if (memberInfo.messageCount) {
-      messageCount = memberInfo.messageCount + 1;
+      messageCount = memberInfo.messageCount;
     }
     const newMessageRef = memberRef.collection(MSG_COL).doc();
     const newMessageBody: {
