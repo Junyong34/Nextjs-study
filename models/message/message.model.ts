@@ -80,8 +80,10 @@ async function listWithPage({ uid, page = 1, size = 10 }: { uid: string; page?: 
     const messageColDoc = await transaction.get(messages);
     const data = messageColDoc.docs.map((doc) => {
       const docData = doc.data() as Omit<InMessageServer, 'id'>;
+      const isDeny = docData.deny !== undefined ? docData.deny : false;
       return {
         ...docData,
+        message: isDeny ? '비공개 처리된 메시지 입니다.' : docData.message,
         id: doc.id,
         createAt: docData.createAt?.toDate().toISOString(),
         replyAt: docData.replyAt?.toDate().toISOString() || undefined,
@@ -98,6 +100,30 @@ async function listWithPage({ uid, page = 1, size = 10 }: { uid: string; page?: 
   return listData;
 }
 
+async function updateMessage({ uid, messageId, deny }: { uid: string; messageId: string; deny: boolean }) {
+  const memberRef = Firestore.collection(MEMBER_COL).doc(uid);
+  const messageRef = memberRef.collection(MSG_COL).doc(messageId);
+  const result = await Firestore.runTransaction(async (transaction) => {
+    const messageDoc = await transaction.get(messageRef);
+    const memberDoc = await transaction.get(memberRef);
+    if (!memberDoc.exists) {
+      throw new Custom_server_error({ statusCode: 400, message: 'member does not exist' });
+    }
+    if (!messageDoc.exists) {
+      throw new Custom_server_error({ statusCode: 400, message: 'message does not exist' });
+    }
+    await transaction.update(messageRef, { deny });
+    const messageData = messageDoc.data() as InMessageServer;
+    return {
+      ...messageData,
+      id: messageId,
+      createAt: messageData.createAt?.toDate().toISOString(),
+      replyAt: messageData.replyAt?.toDate().toISOString() || undefined,
+    };
+  });
+  return result;
+}
+
 async function list({ uid }: { uid: string }) {
   const memberRef = Firestore.collection(MEMBER_COL).doc(uid);
   const listData = await Firestore.runTransaction(async (transaction) => {
@@ -109,8 +135,10 @@ async function list({ uid }: { uid: string }) {
     const messageColDoc = await transaction.get(messages);
     const data = messageColDoc.docs.map((doc) => {
       const docData = doc.data() as Omit<InMessageServer, 'id'>;
+      const isDeny = docData.deny !== undefined ? docData.deny : false;
       return {
         ...docData,
+        message: isDeny ? '비공개 처리된 메시지 입니다.' : docData.message,
         id: doc.id,
         createAt: docData.createAt?.toDate().toISOString(),
         replyAt: docData.replyAt?.toDate().toISOString() || undefined,
@@ -135,9 +163,10 @@ async function get({ uid, messageId }: { uid: string; messageId: string }) {
       throw new Custom_server_error({ statusCode: 400, message: 'message does not exist' });
     }
     const messageData = messageDoc.data() as InMessageServer;
-
+    const isDeny = messageData.deny !== undefined ? messageData.deny : false;
     return {
       ...messageData,
+      message: isDeny ? '비공개 처리된 메시지 입니다.' : messageData.message,
       id: messageDoc.id,
       createAt: messageData.createAt?.toDate().toISOString(),
       replyAt: messageData.replyAt?.toDate().toISOString() || undefined,
@@ -174,6 +203,7 @@ async function postReply({ uid, messageId, reply }: { uid: string; messageId: st
 const messageModel = {
   post,
   list,
+  updateMessage,
   postReply,
   get,
   listWithPage,

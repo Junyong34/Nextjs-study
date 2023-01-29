@@ -8,6 +8,8 @@ interface MessageBase {
     displayName: string;
     photoURL?: string;
   };
+  /* 비공개 여부 */
+  deny?: boolean;
 }
 
 export interface InMessage extends MessageBase {

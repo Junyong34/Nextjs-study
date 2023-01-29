@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Custom_server_error from '@/contorllers/error/custom_server_error';
 import messageModel from '@/models/message/message.model';
+import FirebaseAdmin from '@/models/firebase_admin';
 
 async function post(req: NextApiRequest, res: NextApiResponse) {
   const { uid, message, author } = req.body;
@@ -47,6 +48,37 @@ async function postReply(req: NextApiRequest, res: NextApiResponse) {
   return res.status(201).json({ message: 'success' });
 }
 
+async function updateMessage(req: NextApiRequest, res: NextApiResponse) {
+  const { uid, messageId, deny } = req.body;
+  const token = req.headers.authorization;
+  if (token === undefined) {
+    throw new Custom_server_error({ statusCode: 401, message: 'token is required' });
+  }
+  let tokenUid: null | string = null;
+  try {
+    const decodedToken = await FirebaseAdmin.getInstance().Auth.verifyIdToken(token);
+    tokenUid = decodedToken.uid;
+  } catch (err) {
+    throw new Custom_server_error({ statusCode: 401, message: 'token is invalid' });
+  }
+  if (uid !== tokenUid) {
+    throw new Custom_server_error({ statusCode: 401, message: '수정 권한이 없습니다.' });
+  }
+
+  if (uid === undefined) {
+    throw new Custom_server_error({ statusCode: 400, message: 'uid is required' });
+  }
+  if (messageId === undefined) {
+    throw new Custom_server_error({ statusCode: 400, message: 'message is required' });
+  }
+  if (deny === undefined) {
+    throw new Custom_server_error({ statusCode: 400, message: 'deny is required' });
+  }
+
+  const result = await messageModel.updateMessage({ uid, messageId, deny });
+  return res.status(200).json(result);
+}
+
 async function get(req: NextApiRequest, res: NextApiResponse) {
   const { uid, messageId } = req.query;
   if (uid === undefined) {
@@ -64,6 +96,7 @@ const MessageCtrl = {
   post,
   list,
   get,
+  updateMessage,
   postReply,
 };
 
