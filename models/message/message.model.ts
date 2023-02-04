@@ -56,17 +56,18 @@ async function post({
 
 async function listWithPage({ uid, page = 1, size = 10 }: { uid: string; page?: number; size?: number }) {
   const memberRef = Firestore.collection(MEMBER_COL).doc(uid);
-  const listData = await Firestore.runTransaction(async (transaction) => {
+  return await Firestore.runTransaction(async (transaction) => {
     const memberDoc = await transaction.get(memberRef);
     if (!memberDoc.exists) {
       throw new Custom_server_error({ statusCode: 400, message: 'member does not exist' });
     }
     const memberInfo = memberDoc.data() as InAuthUser & { messageCount: number };
-    const { messageCount = 0 } = memberInfo;
+    const { messageCount = 10 } = memberInfo;
     const totalElements = messageCount !== 0 ? messageCount - 1 : 0;
     const remains = totalElements % size;
     const totalPages = Math.floor(totalElements - remains / size) + (remains > 0 ? 1 : 0);
     const startAt = totalElements - (page - 1) * size;
+
     if (startAt < 0) {
       return {
         totalElements,
@@ -97,7 +98,6 @@ async function listWithPage({ uid, page = 1, size = 10 }: { uid: string; page?: 
       content: data,
     };
   });
-  return listData;
 }
 
 async function updateMessage({ uid, messageId, deny }: { uid: string; messageId: string; deny: boolean }) {

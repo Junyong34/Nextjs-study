@@ -12,7 +12,9 @@ export default function useFirebaseAuth() {
     try {
       const result = await signInWithPopup(FirebaseClient.getInstance().Auth, provider);
       const { user } = result;
+      console.log(user);
       if (user) {
+        console.log(1232133);
         setAuthUser({
           uid: user.uid,
           email: user.email,
@@ -31,6 +33,7 @@ export default function useFirebaseAuth() {
             photoURL: user.photoURL,
           }),
         });
+        console.log('#######');
         console.info({ status: resp.status, body: await resp.json() });
       }
     } catch (error) {
