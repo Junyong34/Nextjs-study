@@ -24,6 +24,7 @@ import { useQuery } from 'react-query';
 
 interface Props {
   userInfo: InAuthUser | null;
+  screenName: string;
 }
 
 async function postMessage({
@@ -75,7 +76,7 @@ async function postMessage({
 //   photoURL: 'https://lh3.googleusercontent.com/a/AEdFTp6tzK8dAUX5fdMzYrLptALFc9o0q7Jl_nSdMuO-=s96-c',
 // };
 
-const UserHomePage: NextPage<Props> = function ({ userInfo }) {
+const UserHomePage: NextPage<Props> = function ({ userInfo, screenName }) {
   const { authUser } = useAuth();
   const [message, setMessage] = useState('');
   const [page, setPage] = useState(1);
@@ -289,6 +290,7 @@ const UserHomePage: NextPage<Props> = function ({ userInfo }) {
                 key={`message-${userInfo.uid}-${messageData.id}`}
                 uid={userInfo.uid}
                 item={messageData}
+                screenName={screenName}
                 photoURL={userInfo?.photoURL ?? 'https://bit.ly/broken-link/1'}
                 displayName={userInfo?.displayName ?? ''}
                 isOwner={authUser !== null && authUser.uid === userInfo.uid}
@@ -325,9 +327,11 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     return {
       props: {
         userInfo: null,
+        screenName: '',
       },
     };
   }
+  const screenNameToStr = Array.isArray(screenName) ? screenName[0] : screenName;
   try {
     const protocal = process.env.PROTOCOL || 'http';
     const host = process.env.HOST || 'localhost';
@@ -338,6 +342,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     return {
       props: {
         userInfo: userInfoResp.data ?? null,
+        screenName: screenNameToStr,
       },
     };
   } catch (e) {
@@ -345,6 +350,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     return {
       props: {
         userInfo: null,
+        screenName: screenNameToStr,
       },
     };
   }

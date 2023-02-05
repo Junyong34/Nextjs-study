@@ -28,9 +28,10 @@ interface Props {
   photoURL: string;
   item: InMessage;
   onSendMessage: () => void;
+  screenName: string;
 }
 
-const MessageItem = function ({ uid, item, photoURL, displayName, isOwner, onSendMessage }: Props) {
+const MessageItem = function ({ uid, screenName, item, photoURL, displayName, isOwner, onSendMessage }: Props) {
   const [reply, setReply] = useState('');
   const toast = useToast();
   async function postReply() {
@@ -125,6 +126,13 @@ const MessageItem = function ({ uid, item, photoURL, displayName, isOwner, onSen
                   }}
                 >
                   {isDeny ? '비공개 해제' : '비공개 처리'}
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    window.location.href = `/${screenName}/${item.id}`;
+                  }}
+                >
+                  메세지 상세 보기
                 </MenuItem>
               </MenuList>
             </Menu>
