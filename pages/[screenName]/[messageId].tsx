@@ -8,14 +8,16 @@ import axios, { AxiosResponse } from 'axios';
 import MessageItem from '@/components/message_item';
 import { InMessage } from '@/models/message/in_message';
 import Link from 'next/link';
+import Head from 'next/head';
 
 interface Props {
   userInfo: InAuthUser | null;
   messageData: InMessage | null;
   screenName: string;
+  baseUrl: string;
 }
 
-const MessageName: NextPage<Props> = function ({ userInfo, messageData: initMsgData, screenName }) {
+const MessageName: NextPage<Props> = function ({ userInfo, baseUrl, messageData: initMsgData, screenName }) {
   const { authUser } = useAuth();
   console.log(authUser);
   const [messageData, setMessageData] = useState<null | InMessage>(initMsgData);
@@ -57,41 +59,52 @@ const MessageName: NextPage<Props> = function ({ userInfo, messageData: initMsgD
   if (messageData === null) {
     return <div>메시지 정보가 없습니다.</div>;
   }
+  const metaImgUrl = `${baseUrl}/open-graph-img?text=${encodeURIComponent(messageData.message)}`;
+  const thumbneilImgUrl = `${baseUrl}/api/thumbnail?url=${encodeURIComponent(metaImgUrl)}`;
   return (
-    <ServiceLayout title={`${userInfo.displayName} 홈`} minHeight={'100vh'} backgroundColor={'grey.50'}>
-      <Box maxW={'md'} mx={'auto'} pt={6}>
-        <Link href={`/${screenName}`}>
-          <a>
-            <Button mb={'2'} fontSize={'sm'}>
-              {screenName} 홈으로
-            </Button>
-          </a>
-        </Link>
-        <Box border={'1px'} borderRadius={'lg'} overflow={'hidden'} mb={'2'} bg={'white'}>
-          <Flex p={6}>
-            <Avatar size={'lg'} src={userInfo.photoURL ?? ''} />
-            <Flex direction={'column'} justify={'center'} pl={4}>
-              <Text fontSize={'md'}>{userInfo.displayName}</Text>
-              <Text fontSize={'xs'}>{userInfo.email}</Text>
+    <>
+      <Head>
+        <meta property={'og:image'} content={metaImgUrl} />
+        <meta property={'twitter:card'} content={'summary_lage_image'} />
+        <meta property={'twitter:site'} content={'@Jund'} />
+        <meta property={'twitter:title'} content={messageData.message} />
+        <meta property={'twitter:image'} content={thumbneilImgUrl} />
+      </Head>
+      <ServiceLayout title={`${userInfo.displayName} 홈`} minHeight={'100vh'} backgroundColor={'grey.50'}>
+        <Box maxW={'md'} mx={'auto'} pt={6}>
+          <Link href={`/${screenName}`}>
+            <a>
+              <Button mb={'2'} fontSize={'sm'}>
+                {screenName} 홈으로
+              </Button>
+            </a>
+          </Link>
+          <Box border={'1px'} borderRadius={'lg'} overflow={'hidden'} mb={'2'} bg={'white'}>
+            <Flex p={6}>
+              <Avatar size={'lg'} src={userInfo.photoURL ?? ''} />
+              <Flex direction={'column'} justify={'center'} pl={4}>
+                <Text fontSize={'md'}>{userInfo.displayName}</Text>
+                <Text fontSize={'xs'}>{userInfo.email}</Text>
+              </Flex>
             </Flex>
-          </Flex>
+          </Box>
+          <MessageItem
+            uid={userInfo.uid}
+            item={messageData}
+            screenName={screenName}
+            photoURL={userInfo?.photoURL ?? 'https://bit.ly/broken-link/1'}
+            displayName={userInfo?.displayName ?? ''}
+            isOwner={authUser !== null && authUser.uid === userInfo.uid}
+            onSendMessage={() => {
+              void fetchMessageInfo({
+                uid: userInfo.uid,
+                messageId: messageData.id,
+              });
+            }}
+          />
         </Box>
-        <MessageItem
-          uid={userInfo.uid}
-          item={messageData}
-          screenName={screenName}
-          photoURL={userInfo?.photoURL ?? 'https://bit.ly/broken-link/1'}
-          displayName={userInfo?.displayName ?? ''}
-          isOwner={authUser !== null && authUser.uid === userInfo.uid}
-          onSendMessage={() => {
-            void fetchMessageInfo({
-              uid: userInfo.uid,
-              messageId: messageData.id,
-            });
-          }}
-        />
-      </Box>
-    </ServiceLayout>
+      </ServiceLayout>
+    </>
   );
 };
 
@@ -129,6 +142,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
           userInfo: null,
           messageData: null,
           screenName: screenNameToStr,
+          baseUrl: '',
         },
       };
     }
@@ -145,6 +159,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
           userInfo: null,
           messageData: null,
           screenName: screenNameToStr,
+          baseUrl,
         },
       };
     }
@@ -153,6 +168,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
         userInfo: userInfoResp.data ?? null,
         messageData: userInMessageResp.data ?? null,
         screenName: screenNameToStr,
+        baseUrl,
       },
     };
   } catch (e) {
@@ -161,6 +177,7 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
       props: {
         userInfo: null,
         messageData: null,
+        baseUrl: '',
       },
     };
   }
