@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/auth_user.context';
-import { Box, Button, Flex, Spacer } from '@chakra-ui/react';
+import { Avatar, Box, Button, Flex, IconButton, Menu, MenuButton, MenuItem, MenuList, Spacer } from '@chakra-ui/react';
+import More_btn_icon from '@/components/more_btn_icon';
 
 export const GNB = () => {
   const { loading, authUser, signOut, signInWithGoogle } = useAuth();
@@ -19,9 +20,25 @@ export const GNB = () => {
     </Button>
   );
   const logOutBtn = (
-    <Button as={'a'} fontWeight={400} variant={'link'} onClick={signOut}>
-      로그아웃
-    </Button>
+    <Menu>
+      <MenuButton as={IconButton} icon={<Avatar size={'md'} src={authUser?.photoURL ?? ''} />} borderRadius={'full'} />
+      <MenuList>
+        <MenuItem
+          onClick={() => {
+            window.location.href = `/${authUser?.email?.replace('@gmail.com', '')}`;
+          }}
+        >
+          사용자 홈으로 이동
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            signOut();
+          }}
+        >
+          로그아웃
+        </MenuItem>
+      </MenuList>
+    </Menu>
   );
   const authInitialized = loading || authUser === null;
 
